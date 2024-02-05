@@ -1,9 +1,15 @@
 const express = require("express")
 const bodyParser = require('body-parser')
 const { MongoClient, ServerApiVersion } = require("mongodb");
-
+const bcrypt = require('bcrypt');
+const cookieParser = require('cookie-parser')
+const saltRounds = 10;
 const app = express();
+
 // const uri = "mongodb+srv://admin:43904390Aekara21@pokebase.thiu0kf.mongodb.net/?retryWrites=true&w=majority"
+app.use(bodyParser.json());
+app.use(cookieParser())
+
 const uri = "mongodb+srv://admin:43904390Aekara21@pokebase.thiu0kf.mongodb.net/"
 
 const client = new MongoClient(uri, {
@@ -18,8 +24,6 @@ let db;
 client.connect().then(function (connection) {
     db = connection.db("PokeBaseDB");
 });
-
-app.use(bodyParser.json());
 
 app.get('/', (req,res)=>{
     res.send('This is working');
@@ -40,7 +44,7 @@ app.post('/register', async (req, res) => {
         const { email, name, password } = req.body;
 
         if (!email || !name || !password) {
-            return res.json({ success: false, message: "Missing params" });
+            return res.status(400).json({ success: false, message: "Missing params" });
         }
         
         const existingUser = await db.collection("Users").findOne({ email });
@@ -48,11 +52,13 @@ app.post('/register', async (req, res) => {
         if (existingUser) {
             return res.json({ success: false, message: "Email already exists in the database" });
         }
+        
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         const user = {
             name: name,
             email: email,
-            password: password,
+            password: hashedPassword,
             pokemonList: []
         }
 
@@ -66,35 +72,49 @@ app.post('/register', async (req, res) => {
 
 
 app.post('/signin', async (req,res) => {
-    const users = await db.collection("Users").find().toArray();
-    console.log(users);
-    
+  try{
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: "Missing params" });
+    }
+
+    const user = await db.collection("Users").findOne({ email });
+
+    if (!user){
+      return res.status(401).json({ success: false, message: "Invalid email or password" });
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+      return res.status(401).json({ success: false, message: "Invalid email or password" });
+    }
+
+    console.log("User Found");
+    const { name } = user;
+    res.json({ success: true, message: `Welcome ${name}` });
+
+  }catch (err) {
+        res.json({ success: false, message: err.message });
+    }
 })
 
-// app.get('/profile/:id', (req,res) => {
-//     const { id } = req.params;
-//     let found = false;
-//     database.users.forEach(user =>{
-//         if (user.id===id){
-//             found = true;
-//             return res.json(user);
-//         }
-//     })
-//     if(!found){
-//         res.status(404).json("No such Trainer!")
-//     }
-// })
+app.post('/catchPokemon', async (req,res) => {
+  try{
+    const {  } = req.body;
+    // const userId = req.user.id;
+    const name = req.user.name;
+    console.log(name)
 
-// getUser=(id) => {
-//     return {
-//         id:'123',
-//         name:'John',
-//         email:'john@gmail.com',
-//         password:'john',
-//         pokemonList:["Pika","Pik","Piki","Pikq","Pikf","pasd"]
-//     }
-// }
+    // const pokemondb = await db.collection("Users").findOne({ pokemonList }).toArray();
+    // res.json({ success: true, pokemondb });
 
+
+  }catch (err) {
+        res.json({ success: false, message: err.message });
+    }
+})
 
 // app.post('/checkForCatch', (req, res) => {
 //     try {
