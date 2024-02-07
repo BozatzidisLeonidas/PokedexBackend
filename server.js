@@ -3,6 +3,7 @@ const bodyParser = require('body-parser')
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto')
 const cors = require('cors');
 // const cookieParser = require('cookie-parser')
 const saltRounds = 10;
@@ -82,7 +83,7 @@ app.post('/signin', async (req,res) => {
       return res.status(400).json({ success: false, message: "Missing params" });
     }
 
-    const user = await db.collection("Users").findOne({ email });
+    const user = await db.collection("Users").findOne({ email },{name:1 ,password:1, pokemonList:1});
 
     if (!user){
       return res.status(401).json({ success: false, message: "Invalid email or password" });
@@ -94,11 +95,30 @@ app.post('/signin', async (req,res) => {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
     }
 
-    const accessToken=jwt.sign({id:user.id}, "mySecretKey")
+    // const accessToken=jwt.sign({id:user.id}, "mySecretKey")
 
     console.log("User Found");
-    const { name } = user;
-    res.json({ success: true, message: `Welcome ${name}, Access token: ${accessToken}` });
+
+    const sessionToken = crypto.randomBytes(16).toString('base64')
+    
+
+    const sessionData = {
+      userID:user._id ,
+      token:sessionToken
+    }
+
+   await db.collection("Session").insertOne(sessionData) 
+   const responseData = { 
+      success: true, 
+      data:{
+        name:user.name,
+        list:user.pokemonList,
+        token:sessionToken
+      }
+    }
+
+    console.log(responseData)
+    res.json(responseData);
 
   }catch (err) {
         res.json({ success: false, message: err.message });
