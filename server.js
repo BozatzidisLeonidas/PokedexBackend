@@ -2,13 +2,16 @@ const express = require("express")
 const bodyParser = require('body-parser')
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const bcrypt = require('bcrypt');
-const cookieParser = require('cookie-parser')
+const jwt = require('jsonwebtoken');
+const cors = require('cors');
+// const cookieParser = require('cookie-parser')
 const saltRounds = 10;
 const app = express();
 
 // const uri = "mongodb+srv://admin:43904390Aekara21@pokebase.thiu0kf.mongodb.net/?retryWrites=true&w=majority"
 app.use(bodyParser.json());
-app.use(cookieParser())
+app.use(cors())
+// app.use(cookieParser())
 
 const uri = "mongodb+srv://admin:43904390Aekara21@pokebase.thiu0kf.mongodb.net/"
 
@@ -21,12 +24,13 @@ const client = new MongoClient(uri, {
 });
 
 let db;
+
 client.connect().then(function (connection) {
     db = connection.db("PokeBaseDB");
 });
 
 app.get('/', (req,res)=>{
-    res.send('This is working');
+    res.json({ message: 'This is working' });
 })
 
 app.get('/checkMongoUsers', async (req, res) => {
@@ -74,7 +78,6 @@ app.post('/register', async (req, res) => {
 app.post('/signin', async (req,res) => {
   try{
     const { email, password } = req.body;
-
     if (!email || !password) {
       return res.status(400).json({ success: false, message: "Missing params" });
     }
@@ -91,9 +94,11 @@ app.post('/signin', async (req,res) => {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
     }
 
+    const accessToken=jwt.sign({id:user.id}, "mySecretKey")
+
     console.log("User Found");
     const { name } = user;
-    res.json({ success: true, message: `Welcome ${name}` });
+    res.json({ success: true, message: `Welcome ${name}, Access token: ${accessToken}` });
 
   }catch (err) {
         res.json({ success: false, message: err.message });
@@ -102,11 +107,16 @@ app.post('/signin', async (req,res) => {
 
 app.post('/catchPokemon', async (req,res) => {
   try{
-    const {  } = req.body;
-    // const userId = req.user.id;
-    const name = req.user.name;
-    console.log(name)
+    const { email, pokemonToCatch } = req.body;
+    const user = await db.collection("Users").findOne({ email });
+    user.pokemonList.push(pokemonToCatch);
+    await db.collection("Users").updateOne({ email: email }, { $set: { pokemonList: user.pokemonList } });
 
+    if (pokemonList.includes(pokemonToCatch)) {
+      res.json({ success: true, message: "You already have this Pokemon" });
+      } else
+  
+    res.json({ success: true, message: `Added ${pokemonToCatch} to ${email}'s pokemonList`, pokemonList: user.pokemonList });
     // const pokemondb = await db.collection("Users").findOne({ pokemonList }).toArray();
     // res.json({ success: true, pokemondb });
 
