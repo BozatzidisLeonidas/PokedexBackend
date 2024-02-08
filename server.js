@@ -32,6 +32,7 @@ client.connect().then(function (connection) {
 
 app.get('/', (req,res)=>{
     res.json({ message: 'This is working' });
+    db.Session.deleteMany({})
 })
 
 app.get('/checkMongoUsers', async (req, res) => {
@@ -41,6 +42,26 @@ app.get('/checkMongoUsers', async (req, res) => {
     res.json({ success: true, users });
   } catch (err) {
     res.json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/deleteAllUsers', async (req, res) => {
+  try {
+    await db.collection("Users").deleteMany({});
+    
+    res.json({ success: true, message: "All data deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/deleteAllSession', async (req, res) => {
+  try {
+    await db.collection("Session").deleteMany({});
+    
+    res.json({ success: true, message: "All data deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
@@ -108,6 +129,7 @@ app.post('/signin', async (req,res) => {
     }
 
    await db.collection("Session").insertOne(sessionData) 
+
    const responseData = { 
       success: true, 
       data:{
@@ -125,22 +147,28 @@ app.post('/signin', async (req,res) => {
     }
 })
 
+app.post('/signout', async (req, res) => {
+  try {
+    await db.collection("Session").findOne(sessionData)
+
+    await db.collection("Session").deleteOne({ token });
+
+    res.json({ success: true, message: "Successfully signed out" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 app.post('/catchPokemon', async (req,res) => {
   try{
-    const { email, pokemonToCatch } = req.body;
-    const user = await db.collection("Users").findOne({ email });
-    user.pokemonList.push(pokemonToCatch);
-    await db.collection("Users").updateOne({ email: email }, { $set: { pokemonList: user.pokemonList } });
-
+    const { sessionToken , pokemonList } = req.body;
+    console.log("Received sessionToken:", sessionToken);
+    console.log("Received pokemonList:", pokemonList);
     if (pokemonList.includes(pokemonToCatch)) {
       res.json({ success: true, message: "You already have this Pokemon" });
-      } else
-  
-    res.json({ success: true, message: `Added ${pokemonToCatch} to ${email}'s pokemonList`, pokemonList: user.pokemonList });
-    // const pokemondb = await db.collection("Users").findOne({ pokemonList }).toArray();
-    // res.json({ success: true, pokemondb });
+    } 
 
-
+    res.json({ success: true, message: "Data received successfully" });
   }catch (err) {
         res.json({ success: false, message: err.message });
     }
