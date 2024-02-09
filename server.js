@@ -161,18 +161,30 @@ app.post('/signout', async (req, res) => {
 
 app.post('/catchPokemon', async (req,res) => {
   try{
-    const { sessionToken , pokemonList } = req.body;
-    console.log("Received sessionToken:", sessionToken);
-    console.log("Received pokemonList:", pokemonList);
-    if (pokemonList.includes(pokemonToCatch)) {
-      res.json({ success: true, message: "You already have this Pokemon" });
-    } 
+    const { pokemonName } = req.body;
+    console.log("Received pokemonName:", pokemonName);
+    req.pokemonName = pokemonName;
+    
+    next();
 
     res.json({ success: true, message: "Data received successfully" });
   }catch (err) {
         res.json({ success: false, message: err.message });
     }
 })
+
+app.post('/pushtoList', async (req,res) => {
+  try{
+    const { sessionToken , pokemonList } = req.body;
+    const  pokemonName  = req.pokemonName;;
+    console.log("pushtoList pokemonName:", pokemonName);
+
+    res.json({ success: true, message: "Data received successfully" });
+  }catch (err) {
+        res.json({ success: false, message: err.message });
+    }
+})
+
 
 // app.post('/checkForCatch', (req, res) => {
 //     try {
