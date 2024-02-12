@@ -5,14 +5,21 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto')
 const cors = require('cors');
-// const cookieParser = require('cookie-parser')
+const flash = require('connect-flash');
+const session = require('express-session');
 const saltRounds = 10;
 const app = express();
 
-// const uri = "mongodb+srv://admin:43904390Aekara21@pokebase.thiu0kf.mongodb.net/?retryWrites=true&w=majority"
+
 app.use(bodyParser.json());
-app.use(cors())
-// app.use(cookieParser())
+app.use(cors());
+
+app.use(session({
+  secret: 'your_secret_key',
+  resave: false,
+  saveUninitialized: true
+}));
+app.use(flash());
 
 const uri = "mongodb+srv://admin:43904390Aekara21@pokebase.thiu0kf.mongodb.net/"
 
@@ -30,9 +37,12 @@ client.connect().then(function (connection) {
     db = connection.db("PokeBaseDB");
 });
 
+app.listen(3000, () => {
+  console.log("Listening on port 3000");
+}); 
+
 app.get('/', (req,res)=>{
     res.json({ message: 'This is working' });
-    db.Session.deleteMany({})
 })
 
 app.get('/checkMongoUsers', async (req, res) => {
@@ -64,6 +74,17 @@ app.delete('/deleteAllSession', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+app.get('/pokemonList', async (req,res) => {
+  try{
+    const pokemonCollection = db.collection("AllPokemonCollection");
+    const pokemon = await pokemonCollection.find().toArray();
+    res.json({ success: true, pokemon });
+  }catch (err) {
+        res.json({ success: false, message: err.message });
+    }
+})
+
 
 app.post('/register', async (req, res) => {
     try {
@@ -159,31 +180,6 @@ app.post('/signout', async (req, res) => {
   }
 });
 
-app.post('/catchPokemon', async (req,res) => {
-  try{
-    const { pokemonName } = req.body;
-    console.log("Received pokemonName:", pokemonName);
-    req.pokemonName = pokemonName;
-    
-    next();
-
-    res.json({ success: true, message: "Data received successfully" });
-  }catch (err) {
-        res.json({ success: false, message: err.message });
-    }
-})
-
-app.post('/pushtoList', async (req,res) => {
-  try{
-    const { sessionToken , pokemonList } = req.body;
-    const  pokemonName  = req.pokemonName;;
-    console.log("pushtoList pokemonName:", pokemonName);
-
-    res.json({ success: true, message: "Data received successfully" });
-  }catch (err) {
-        res.json({ success: false, message: err.message });
-    }
-})
 
 
 // app.post('/checkForCatch', (req, res) => {
@@ -229,9 +225,3 @@ app.post('/pushtoList', async (req,res) => {
 //         res.json({ success: false, message: err.message });
 //     }
 // });
-
-
-
-app.listen(3000, () => {
-  console.log("Listening on port 3000");
-});
