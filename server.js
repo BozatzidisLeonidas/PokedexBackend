@@ -1,6 +1,6 @@
 const express = require("express")
 const bodyParser = require('body-parser')
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto')
@@ -78,7 +78,7 @@ app.delete('/deleteAllSession', async (req, res) => {
 app.get('/pokemonList', async (req,res) => {
   try{
     const pokemonCollection = db.collection("AllPokemonCollection");
-    const pokemon = await pokemonCollection.find().toArray();
+    const pokemon = await pokemonCollection.find().sort({id: 1}).toArray();
     res.json({ success: true, pokemon });
   }catch (err) {
         res.json({ success: false, message: err.message });
@@ -145,7 +145,7 @@ app.post('/signin', async (req,res) => {
     
 
     const sessionData = {
-      userID:user._id ,
+      userID:user._id.toString(),
       token:sessionToken
     }
 
@@ -182,26 +182,40 @@ app.post('/signout', async (req, res) => {
 
 
 
-// app.post('/checkForCatch', (req, res) => {
-//     try {
-//         const { id, pokemonToCatch } = req.body; 
-//         const user = getUser(id);
-//         const pokemonList = user.pokemonList;
+app.post('/catchPokemon', async (req, res) => {
+  const { pokemonName, sessionToken } = req.body;
+  console.log(pokemonName);
+  console.log(sessionToken);
 
-//         if (pokemonList.includes(pokemonToCatch)) {
-//             res.json({ success: true, message: "You already have this Pokemon" });
-//         } else {
-//             if (pokemonList.length >= 6) {
-//                 res.json({ success: true, message: "Your Pokemon list is full" });
-//             } else {
-//                 pokemonList.push(pokemonToCatch);
-//                 res.json({ success: true, message: "Congratulations! You caught a new Pokemon", data: pokemonList });
-//             }
-//         }
-//     } catch (err) {
-//         res.json({ success: false, message: err.message });
-//     }
-// });
+  try {
+    const sessionTokenDB = await db.collection("Session").findOne({ token: sessionToken });
+
+    if (sessionTokenDB && sessionTokenDB.token === sessionToken) {
+      console.log("success");
+      const userId = sessionTokenDB.userID;
+      const user = await db.collection("Users").findOne({ _id: new ObjectId(userId) });
+      const pokemonList = user.pokemonList;
+
+      if (pokemonList.includes(pokemonName)) {
+        res.json({ success: false, message: "You already have this Pokemon" });
+      } else {
+        if (pokemonList.length >= 6) {
+          res.json({ success: false, message: "Your Pokemon list is full" });
+        } else {
+          pokemonList.push(pokemonName); 
+          await db.collection("Users").updateOne({ _id: new ObjectId(userId) }, { $set: { pokemonList: pokemonList } });
+          res.json({ success: true, message: "Congratulations! You caught a new Pokemon", data: pokemonList });
+        }
+      }
+    } else {
+      console.log("Session token not found in the database or doesn't match");
+      res.json({ success: false, message: "Session token not found or doesn't match" });
+    }
+  } catch (err) {
+    console.error("Error occurred while querying the database:", err);
+    res.json({ success: false, message: err.message });
+  }
+});
 
 // app.post('/replacePokemon', (req, res) => {
 //     try {
