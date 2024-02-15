@@ -180,13 +180,8 @@ app.post('/signout', async (req, res) => {
   }
 });
 
-
-
 app.post('/catchPokemon', async (req, res) => {
   const { pokemonName, sessionToken } = req.body;
-  console.log(pokemonName);
-  console.log(sessionToken);
-
   try {
     const sessionTokenDB = await db.collection("Session").findOne({ token: sessionToken });
 
@@ -200,7 +195,7 @@ app.post('/catchPokemon', async (req, res) => {
         res.json({ success: false, message: "You already have this Pokemon" });
       } else {
         if (pokemonList.length >= 6) {
-          res.json({ success: false, message: "Your Pokemon list is full" });
+          res.json({ success: false, message: "Your Pokemon list is full", pokemonList:pokemonList });
         } else {
           pokemonList.push(pokemonName); 
           await db.collection("Users").updateOne({ _id: new ObjectId(userId) }, { $set: { pokemonList: pokemonList } });
@@ -217,25 +212,22 @@ app.post('/catchPokemon', async (req, res) => {
   }
 });
 
-// app.post('/replacePokemon', (req, res) => {
-//     try {
-//         const { id, pokemonToCatch, pokemonToRemove } = req.body;
-//         const user = getUser(id);
-//         const pokemonList = user.pokemonList;
+app.post('/replacePokemon', async (req, res) => {
+  const { pokemon, selectedPokemon } = req.body;
+  
+  try {
+    const result = await db.collection("Users").updateOne(
+      { pokemonList: pokemon },
+      { $set: { "pokemonList.$": selectedPokemon } }
+    );
 
-//         if (pokemonList.includes(pokemonToCatch)) {
-//             return res.json({ success: true, message: "You already have this Pokemon" });
-//         }
-
-//         const indexOfPokemonToRemove = pokemonList.indexOf(pokemonToRemove);
-
-//         if (indexOfPokemonToRemove !== -1 && indexOfPokemonToRemove < pokemonList.length) {
-//             pokemonList[indexOfPokemonToRemove] = pokemonToCatch;
-//             return res.json({ success: true, message: "Pokemon replaced successfully", data: pokemonList });
-//         } else {
-//             return res.json({ success: false, message: "Pokemon to remove not found in the list" });
-//         }
-//     } catch (err) {
-//         res.json({ success: false, message: err.message });
-//     }
-// });
+    if (result.matchedCount === 1 && result.modifiedCount === 1) {
+      res.json({ success: true, message: 'Pokemon replaced successfully' });
+    } else {
+      res.json({ success: false, message: 'Pokemon not found or not replaced' });
+    }
+  } catch (err) {
+    console.error('Error:', err);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
