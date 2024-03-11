@@ -57,7 +57,7 @@ app.use(session({
             const formattedPokemon = results.map((data) => {
                 
                 data.name=data.name.charAt(0).toUpperCase()+data.name.slice(1);
-                data.id = String(data.id).padStart(3, '0');
+                data.id = data.id;
                 data.weight=parseFloat(data.weight.toString().slice(0, -1) + '.' + data.weight.toString().slice(-1));
                 data.height=parseFloat(data.height.toString().slice(0, -1) + '.' + data.height.toString().slice(-1));
                 
