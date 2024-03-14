@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const app = express();
 const bodyParser = require('body-parser');
@@ -12,12 +13,12 @@ app.use(bodyParser.json());
 app.use(cors());
 
 app.use(session({
-  secret: 'your_secret_key',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true
 }));
 
-const uri = "mongodb+srv://admin:43904390Aekara21@pokebase.thiu0kf.mongodb.net/"
+const uri = process.env.DB_URI;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -32,12 +33,10 @@ client.connect().then(function (connection) {
     global.db = connection.db("PokeBaseDB");
 });
 
-app.listen(3000, () => {
+app.listen(process.env.PORT, () => {
   console.log("Listening on port 3000");
 }); 
 
 app.use('/', getRequestsRouter);
 app.use('/', deleteRequestsRouter);
 app.use('/', postRequestsRouter);
-
-
