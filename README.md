@@ -41,20 +41,20 @@ The server will start running on port 3000 by default, or on the port specified 
 # API Endpoints
 
 ## User Authentication.
--POST /register: Register a new user.
--POST /signin: Sign in an existing user.
--POST /signout: Sign out the current user.
+- POST /register: Register a new user.
+- POST /signin: Sign in an existing user.
+- POST /signout: Sign out the current user.
 
 ## User Data Management.
--POST /userData: Fetch user data.
--POST /catchPokemon: Catch a new Pokemon.
--POST /replacePokemon: Replace an existing Pokemon.
--GET /checkMongoUsers: Check MongoDB users.
--GET /pokemonList: Get the list of Pokemon.
+- POST /userData: Fetch user data.
+- POST /catchPokemon: Catch a new Pokemon.
+- POST /replacePokemon: Replace an existing Pokemon.
+- GET /checkMongoUsers: Check MongoDB users.
+- GET /pokemonList: Get the list of Pokemon.
 
 ## Data Management.
--DELETE /deleteAllUsers: Delete all users from the database.
--DELETE /deleteAllSessions: Delete all session data.
+- DELETE /deleteAllUsers: Delete all users from the database.
+- DELETE /deleteAllSessions: Delete all session data.
 
 ## License
 
